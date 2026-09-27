@@ -19,6 +19,8 @@ button{font-family:inherit;cursor:pointer;border:0;color:inherit;background:none
 @keyframes pulse{to{transform:scale(1.05)}}
 .hint{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 120px);text-align:center;font-size:22px;font-weight:800;color:var(--ink);background:rgba(255,255,255,.92);padding:14px 22px;border-radius:18px;box-shadow:0 8px 24px rgba(30,60,140,.2);pointer-events:none;animation:bob 1.6s ease-in-out infinite}
 @keyframes bob{50%{transform:translate(-50%,-6px)}}
+.home-btn{position:absolute;left:14px;top:14px;z-index:2;font-size:17px;font-weight:800;color:#1f5a34;text-decoration:none;background:rgba(255,255,255,.9);padding:9px 14px;border-radius:99px;box-shadow:0 4px 12px rgba(30,60,140,.2)}
+.home-btn:hover{background:#fff}
 .snd{position:absolute;right:14px;bottom:14px;display:flex;gap:8px}
 .icon-btn{width:48px;height:48px;border-radius:50%;font-size:22px;font-weight:900;background:rgba(255,255,255,.85);color:var(--ink);box-shadow:0 4px 12px rgba(30,60,140,.2)}
 .icon-btn.off{opacity:.4;text-decoration:line-through}
@@ -102,6 +104,8 @@ button{font-family:inherit;cursor:pointer;border:0;color:inherit;background:none
   .rates span{font-size:15px;padding:5px 11px}
   .hint{font-size:17px;padding:10px 16px;bottom:64px;max-width:calc(100% - 32px)}
   .icon-btn{width:40px;height:40px;font-size:18px}
+  .home-btn{font-size:14px;padding:7px 11px;top:10px;left:10px}
+  .top{padding-top:44px}
   .tabs{padding:10px 10px 8px}
   .tabs button{font-size:19px;padding:11px 0}
   .list{padding:4px 10px 10px}
