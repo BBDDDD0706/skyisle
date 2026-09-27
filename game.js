@@ -56,8 +56,6 @@ B.forEach((b, i) => TIER_AT.forEach((at, t) => UPS.push({
 });
 UPS.push({ id: 'bird0', icon: '🐦', name: '새 모이 그릇', desc: '파랑새가 더 자주 찾아와요', cost: 2e4, req: () => S.birds >= 1, reqText: '파랑새 1번 잡기' });
 UPS.push({ id: 'bird1', icon: '🪺', name: '포근한 새 둥지', desc: '파랑새 행운이 2배 오래 가요', cost: 2e6, req: () => S.birds >= 5, reqText: '파랑새 5번 잡기' });
-UPS.push({ id: 'off0', icon: '🌙', name: '밤을 지키는 등불', desc: '자리를 비운 동안 모이는 양 50% → 100%', cost: 1e6, req: () => S.owned[6] >= 1, reqText: '등대 1개' });
-UPS.push({ id: 'off1', icon: '💤', name: '긴 꿈', desc: '자리를 비운 동안 최대 8시간 → 24시간', cost: 1e8, req: () => S.owned[7] >= 1, reqText: '천문대 1개' });
 UPS.sort((a, b) => a.cost - b.cost);
 
 // ---------- 상태 ----------
@@ -131,14 +129,6 @@ function buyUp(u) {
 
 // ---------- 저장 / 자리 비움 ----------
 function save() { S.last = Date.now(); store.set('si-save', S); }
-function offlineGain() {
-  const away = (Date.now() - (S.last || Date.now())) / 1000;
-  if (away < 60 || D.basePps <= 0) return;
-  const cap = has('off1') ? 24 * 3600 : 8 * 3600, rate = has('off0') ? 1 : 0.5;
-  const t = Math.min(away, cap), amt = D.basePps * t * rate;
-  gain(amt);
-  modal('다녀오셨어요?', `자리를 비운 <b>${fmtTime(away)}</b> 동안 섬이 부지런히 일했어요.<br><span class="big-num">✦ ${fmt(amt)}</span>${away > cap ? `<br><small>최대 ${cap / 3600}시간까지만 모여요</small>` : ''}`, [['받기', () => Snd.play('collect')]]);
-}
 
 // ---------- 새로 띄우기 (깃털) ----------
 const featherGain = () => Math.floor(Math.sqrt(S.run / 1e9));
@@ -346,7 +336,7 @@ function refreshTop() {
   const now = Date.now();
   bf.innerHTML = buffs.filter((b) => b.until > now).map((b) => `<span>${b.name} · ${Math.ceil((b.until - now) / 1000)}초</span>`).join('');
   const side = window.innerWidth > window.innerHeight ? '오른쪽' : '아래';
-  const hint = hintOverride || (S.taps < 8 && !S.owned[0] ? '섬을 톡톡 눌러 빛방울을 모으세요' : !S.owned[0] ? `빛방울이 모이면 ${side}에서 ‘풀꽃밭’을 사 보세요` : totalOwned() < 4 && !S.rebirths ? '건물은 가만히 있어도 빛방울을 만들어요. 창을 닫아도 조금씩 모여요' : '');
+  const hint = hintOverride || (S.taps < 8 && !S.owned[0] ? '섬을 톡톡 눌러 빛방울을 모으세요' : !S.owned[0] ? `빛방울이 모이면 ${side}에서 ‘풀꽃밭’을 사 보세요` : totalOwned() < 4 && !S.rebirths ? '건물은 가만히 있어도 빛방울을 만들어요. 창을 켜 두면 계속 모여요' : '');
   $('#hint').textContent = hint; $('#hint').hidden = !hint;
 }
 let shopKey = '';
@@ -456,7 +446,7 @@ function buildShop(vis, avail) {
         ['불러오기', () => {
           const data = importCode($('#importBox').value);
           if (!data) { Snd.play('no'); toast('저장 코드가 올바르지 않아요. 처음부터 끝까지 전부 복사했는지 확인해 주세요'); return; }
-          S = data; owned = new Set(S.ups); buffs = []; recalc(); offlineGain(); save(); refreshShop(true);
+          S = data; S.last = Date.now(); owned = new Set(S.ups); buffs = []; recalc(); save(); refreshShop(true);
           Snd.play('collect'); toast('기록을 불러왔어요!');
         }],
         ['취소', null, 'sub'],
@@ -486,7 +476,7 @@ syncSnd();
 // ---------- 반복 ----------
 let lastEco = Date.now(), lastFrame = performance.now(), saveT = 0, uiT = 0;
 function economy() {
-  const now = Date.now(), dt = Math.min(8 * 3600, (now - lastEco) / 1000); lastEco = now;
+  const now = Date.now(), dt = Math.min(120, (now - lastEco) / 1000); // 섬은 켜 둔 동안에만 자란다 (절전으로 멈춘 시간은 인정 안 함) lastEco = now;
   recalc();
   gain(D.pps * dt);
   if (!bird) { birdTimer -= dt; if (birdTimer <= 0 && !document.hidden) { spawnBird(); birdTimer = rand(70, 150) * (has('bird0') ? 0.65 : 1); } }
@@ -515,6 +505,5 @@ window.addEventListener('pagehide', save);
 // ---------- 시작 ----------
 fit();
 recalc();
-offlineGain();
 refreshShop(true); refreshTop();
 requestAnimationFrame(frame);
