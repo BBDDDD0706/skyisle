@@ -59,19 +59,22 @@ UPS.push({ id: 'bird1', icon: '🪺', name: '포근한 새 둥지', desc: '파�
 UPS.sort((a, b) => a.cost - b.cost);
 
 // ---------- 상태 ----------
-const FRESH = () => ({ v: 1, drops: 0, run: 0, all: 0, taps: 0, birds: 0, owned: B.map(() => 0), ups: [], feathers: 0, rebirths: 0, last: Date.now(), started: Date.now(), buy: 1 });
+const FRESH = () => ({ v: 2, drops: 0, run: 0, all: 0, taps: 0, birds: 0, owned: B.map(() => 0), ups: [], feathers: 0, rebirths: 0, last: Date.now(), started: Date.now(), buy: 1 });
 // 저장된 값(또는 붙여넣은 저장 코드)에서 알맞은 값만 골라 담는다
 function cleanSave(o) {
   const f = FRESH();
   if (!o || typeof o !== 'object') return f;
   const num = (v, d) => (typeof v === 'number' && isFinite(v) && v >= 0 ? v : d);
   for (const k of ['drops', 'run', 'all', 'taps', 'birds', 'feathers', 'rebirths', 'last', 'started']) f[k] = num(o[k], f[k]);
+  f.feathers = Math.floor(f.feathers);
   f.owned = B.map((_, i) => Math.floor(num(o.owned?.[i], 0)));
   f.ups = Array.isArray(o.ups) ? o.ups.filter((id) => UPS.some((u) => u.id === id)) : [];
   f.buy = o.buy === 'max' || o.buy === 10 ? o.buy : 1;
   return f;
 }
-let S = cleanSave(store.get('si-save', null));
+const loaded = store.get('si-save', null);
+const OLD_SAVE = !!(loaded && (loaded.v || 1) < 2 && (loaded.rebirths > 0 || loaded.feathers > 0));
+let S = OLD_SAVE ? FRESH() : cleanSave(loaded);
 const CODE_HEAD = 'SKYISLE1:';
 function exportCode() { save(); return CODE_HEAD + btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }
 function importCode(text) {
@@ -87,7 +90,7 @@ const D = { pps: 0, basePps: 0, tap: 1 };
 function recalc() {
   const now = Date.now();
   buffs = buffs.filter((b) => b.until > now);
-  let glob = 1 + 0.05 * S.feathers;
+  let glob = 1 + 0.02 * S.feathers;
   for (let k = 0; k < 6; k++) if (has(`bless${k}`)) glob *= 1.25;
   let base = 0;
   B.forEach((b, i) => {
@@ -105,7 +108,7 @@ function recalc() {
   if (has('tap5')) tapPct += 0.02;
   D.basePps = base;
   D.pps = base * prodBuff;
-  D.tap = (tapMul * (1 + 0.05 * S.feathers) + D.pps * tapPct) * tapBuff;
+  D.tap = (tapMul * (1 + 0.02 * S.feathers) + D.pps * tapPct) * tapBuff;
 }
 function gain(n) { S.drops += n; S.run += n; S.all += n; }
 const costOf = (i, n = 1) => B[i].cost * Math.pow(GROWTH, S.owned[i]) * (Math.pow(GROWTH, n) - 1) / (GROWTH - 1);
@@ -131,11 +134,13 @@ function buyUp(u) {
 function save() { S.last = Date.now(); store.set('si-save', S); }
 
 // ---------- 새로 띄우기 (깃털) ----------
-const featherGain = () => Math.floor(Math.sqrt(S.run / 1e9));
+const featherTotal = (all) => Math.floor(Math.cbrt(all / 1e7));
+const featherGain = () => Math.max(0, featherTotal(S.all) - S.feathers);
+const featherNeed = () => Math.pow(S.feathers + featherGain() + 1, 3) * 1e7; // 깃털 하나 더 받으려면 필요한 총량
 function rebirth() {
   const f = featherGain();
   if (f < 1) return;
-  modal('섬을 더 높이 띄울까요?', `지금까지 모은 건물과 강화, 빛방울이 모두 사라지고 처음부터 다시 시작해요.<br>대신 <b>깃털 ${f}개</b>를 얻어요. 깃털 하나마다 <b>모든 생산과 누르기 +5%</b>가 영원히 붙어요.`, [
+  modal('섬을 더 높이 띄울까요?', `지금까지 모은 건물과 강화, 빛방울이 모두 사라지고 처음부터 다시 시작해요.<br>대신 <b>깃털 ${f}개</b>를 얻어요. 깃털 하나마다 <b>모든 생산과 누르기 +2%</b>가 영원히 붙어요.`, [
     ['다시 띄우기', () => {
       const keep = { feathers: S.feathers + f, rebirths: S.rebirths + 1, all: S.all, taps: S.taps, birds: S.birds, started: S.started, buy: S.buy };
       S = Object.assign(FRESH(), keep); owned = new Set(); buffs = [];
@@ -366,7 +371,7 @@ function refreshShop(force) {
   document.querySelectorAll('.u-card').forEach((el) => el.classList.toggle('no', +el.dataset.cost > S.drops));
   const cnt = avail.filter((u) => u.cost <= S.drops).length;
   $('#upBadge').textContent = cnt || ''; $('#upBadge').hidden = !cnt;
-  if (tab === 'f') { $('#fGain').textContent = featherGain(); $('#fRun').textContent = fmt(S.run); $('#fNeed').textContent = fmt(Math.pow(featherGain() + 1, 2) * 1e9); $('#rebirthBtn').disabled = featherGain() < 1; }
+  if (tab === 'f') { $('#fGain').textContent = featherGain(); $('#fRun').textContent = fmt(S.all); $('#fNeed').textContent = fmt(featherNeed()); $('#rebirthBtn').disabled = featherGain() < 1; }
 }
 function buildShop(vis, avail) {
   $('#buyMode').hidden = tab !== 'b';
@@ -411,9 +416,9 @@ function buildShop(vis, avail) {
     const played = (Date.now() - S.started) / 1000;
     list.innerHTML = `
       <div class="f-box">
-        <div class="f-have">🪶 깃털 <b>${S.feathers}</b>개 <small>모든 생산·누르기 +${S.feathers * 5}%</small></div>
-        <p>섬을 다시 띄우면 처음부터 시작하지만, 이번 판에 모은 빛방울만큼 <b>깃털</b>을 얻어요. 깃털은 사라지지 않고 하나마다 생산이 5%씩 늘어요.</p>
-        <div class="f-now">이번 판에 모은 빛방울 <b id="fRun"></b><br>지금 띄우면 얻는 깃털 <b class="gold" id="fGain"></b>개<br><small>깃털 하나 더 받으려면 이번 판 합계 ✦ <span id="fNeed"></span></small></div>
+        <div class="f-have">🪶 깃털 <b>${S.feathers}</b>개 <small>모든 생산·누르기 +${(S.feathers * 2).toLocaleString('ko-KR')}%</small></div>
+        <p>섬을 다시 띄우면 처음부터 시작하지만, <b>지금까지 모은 빛방울 총량</b>에 따라 <b>깃털</b>을 얻어요. 깃털은 사라지지 않고 하나마다 생산이 2%씩 늘어요. 총량이 많을수록 깃털이 조금씩 더 늘어나요.</p>
+        <div class="f-now">지금까지 모은 빛방울 <b id="fRun"></b><br>지금 띄우면 얻는 깃털 <b class="gold" id="fGain"></b>개<br><small>깃털 하나 더 받으려면 총량 ✦ <span id="fNeed"></span></small></div>
         <button type="button" class="btn-main" id="rebirthBtn">섬을 더 높이 띄우기</button>
       </div>
       <div class="f-stats">
@@ -507,3 +512,4 @@ fit();
 recalc();
 refreshShop(true); refreshTop();
 requestAnimationFrame(frame);
+if (OLD_SAVE) modal('섬 밸런스가 바뀌었어요', '깃털 계산에 오류가 있어 숫자가 끝없이 커지던 문제를 고쳤어요.<br>그래서 이전 기록은 새 밸런스에서 <b>처음부터</b> 다시 시작해요. 불편을 드려 죄송해요!', [['새로 시작하기', null]]);
