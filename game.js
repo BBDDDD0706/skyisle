@@ -62,8 +62,25 @@ UPS.sort((a, b) => a.cost - b.cost);
 
 // ---------- 상태 ----------
 const FRESH = () => ({ v: 1, drops: 0, run: 0, all: 0, taps: 0, birds: 0, owned: B.map(() => 0), ups: [], feathers: 0, rebirths: 0, last: Date.now(), started: Date.now(), buy: 1 });
-let S = Object.assign(FRESH(), store.get('si-save', {}));
-S.owned = B.map((_, i) => S.owned?.[i] || 0);
+// 저장된 값(또는 붙여넣은 저장 코드)에서 알맞은 값만 골라 담는다
+function cleanSave(o) {
+  const f = FRESH();
+  if (!o || typeof o !== 'object') return f;
+  const num = (v, d) => (typeof v === 'number' && isFinite(v) && v >= 0 ? v : d);
+  for (const k of ['drops', 'run', 'all', 'taps', 'birds', 'feathers', 'rebirths', 'last', 'started']) f[k] = num(o[k], f[k]);
+  f.owned = B.map((_, i) => Math.floor(num(o.owned?.[i], 0)));
+  f.ups = Array.isArray(o.ups) ? o.ups.filter((id) => UPS.some((u) => u.id === id)) : [];
+  f.buy = o.buy === 'max' || o.buy === 10 ? o.buy : 1;
+  return f;
+}
+let S = cleanSave(store.get('si-save', null));
+const CODE_HEAD = 'SKYISLE1:';
+function exportCode() { save(); return CODE_HEAD + btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }
+function importCode(text) {
+  text = (text || '').trim().replace(/\s+/g, '');
+  if (!text.startsWith(CODE_HEAD)) return null;
+  try { return cleanSave(JSON.parse(decodeURIComponent(escape(atob(text.slice(CODE_HEAD.length)))))); } catch { return null; }
+}
 let owned = new Set(S.ups);
 const has = (id) => owned.has(id);
 const totalOwned = () => S.owned.reduce((a, b) => a + b, 0);
@@ -416,8 +433,35 @@ function buildShop(vis, avail) {
         <div><span>잡은 파랑새</span><b>${S.birds}마리</b></div>
         <div><span>처음 시작한 지</span><b>${fmtTime(played)}</b></div>
       </div>
+      <div class="f-box">
+        <div class="f-have" style="font-size:24px">📦 기록 옮기기</div>
+        <p>기록은 이 브라우저에만 저장돼요. 다른 기기나 브라우저에서 이어 하려면 <b>저장 코드</b>를 복사해서, 그쪽에서 ‘불러오기’에 붙여 넣으세요.</p>
+        <button type="button" class="btn-main" id="exportBtn">저장 코드 복사하기</button>
+        <button type="button" class="btn-sub" id="importBtn">저장 코드 불러오기</button>
+      </div>
       <button type="button" class="btn-danger" id="wipeBtn">모든 기록 지우기</button>`;
     $('#rebirthBtn').onclick = rebirth;
+    $('#exportBtn').onclick = () => {
+      const code = exportCode();
+      Snd.play('click');
+      modal('저장 코드', '아래 코드를 전부 복사해서 메모장이나 메신저 ‘나에게 보내기’에 넣어 두세요.<textarea class="code-box" readonly></textarea><span class="copy-msg"></span>', [['닫기', null]]);
+      const box = document.querySelector('.code-box'), msg = document.querySelector('.copy-msg');
+      box.value = code; box.onclick = () => box.select();
+      const done = () => { msg.textContent = '✔ 클립보드에 복사했어요'; };
+      try { navigator.clipboard.writeText(code).then(done, () => box.select()); } catch { box.select(); }
+    };
+    $('#importBtn').onclick = () => {
+      Snd.play('click');
+      modal('저장 코드 불러오기', '복사해 둔 저장 코드를 아래에 붙여 넣으세요.<br><small>지금 이 브라우저의 기록은 불러온 기록으로 바뀌어요.</small><textarea class="code-box" id="importBox" placeholder="SKYISLE1:..."></textarea>', [
+        ['불러오기', () => {
+          const data = importCode($('#importBox').value);
+          if (!data) { Snd.play('no'); toast('저장 코드가 올바르지 않아요. 처음부터 끝까지 전부 복사했는지 확인해 주세요'); return; }
+          S = data; owned = new Set(S.ups); buffs = []; recalc(); offlineGain(); save(); refreshShop(true);
+          Snd.play('collect'); toast('기록을 불러왔어요!');
+        }],
+        ['취소', null, 'sub'],
+      ]);
+    };
     $('#wipeBtn').onclick = () => modal('정말 지울까요?', '깃털까지 모든 기록이 사라지고 되돌릴 수 없어요.', [['지우기', () => { S = FRESH(); owned = new Set(); buffs = []; recalc(); save(); refreshShop(true); }, 'danger'], ['취소', null, 'sub']]);
   }
 }

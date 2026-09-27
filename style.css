@@ -85,6 +85,8 @@ button{font-family:inherit;cursor:pointer;border:0;color:inherit;background:none
 .m-box h2{font-size:30px;font-weight:900;margin-bottom:14px}
 .m-box p{font-size:19px;line-height:1.65;color:var(--sub)}
 .m-box b{color:var(--ink)}
+.code-box{display:block;width:100%;height:110px;margin-top:14px;padding:12px;border:2px solid var(--line);border-radius:14px;font:14px/1.4 ui-monospace,Consolas,monospace;color:var(--ink);resize:none;word-break:break-all}
+.copy-msg{display:block;margin-top:8px;font-weight:800;color:#2f9a58;min-height:1.4em}
 .big-num{display:inline-block;margin-top:12px;font-size:38px;font-weight:900;color:var(--gold)}
 .m-btns{display:flex;flex-direction:column;gap:10px;margin-top:22px}
 .toast{position:fixed;left:50%;top:18px;transform:translate(-50%,-140%);background:var(--ink);color:#fff;font-size:18px;font-weight:800;padding:14px 22px;border-radius:16px;z-index:20;transition:transform .3s;max-width:calc(100% - 32px);text-align:center}
