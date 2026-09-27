@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>하늘섬 키우기 - 구름 위 작은 섬을 키우는 방치형 무료 웹게임 | 버들</title>
+<meta name="description" content="구름 위에 떠 있는 작은 섬을 톡톡 눌러 빛방울을 모으고, 꽃밭·풍차·등대·하늘 고래까지 섬을 키워 보세요. 창을 닫아도 섬은 계속 자라요. 설치 없는 무료 방치형 게임.">
+<meta property="og:title" content="하늘섬 키우기 - 방치형 웹게임">
+<meta property="og:description" content="구름 위 작은 섬을 키워 보세요. 창을 닫아도 섬은 계속 자라요.">
+<meta name="google-site-verification" content="MvUY2g0-M_AKfOrNFpUJFnytvL8OPrw4plyCOSH2vSU">
+<link rel="canonical" href="https://bbdddd0706.github.io/skyisle/">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <main id="world">
+    <canvas id="cv"></canvas>
+    <div class="top">
+      <div class="amount"><i class="drop"></i><b id="amt">0</b></div>
+      <div class="rates"><span>초당 <b id="pps">0</b></span><span>한 번 누르면 <b id="tapv">1</b></span></div>
+      <div class="buff" id="buff"></div>
+    </div>
+    <div class="hint" id="hint" hidden></div>
+    <div class="snd">
+      <button type="button" class="icon-btn" id="musicBtn" title="배경음악 켜기/끄기">♪</button>
+      <button type="button" class="icon-btn" id="sfxBtn" title="효과음 켜기/끄기">🔔</button>
+    </div>
+  </main>
+  <aside id="shop">
+    <nav class="tabs">
+      <button type="button" data-tab="b" class="on">건물</button>
+      <button type="button" data-tab="u">강화 <i id="upBadge" hidden></i></button>
+      <button type="button" data-tab="f">깃털</button>
+    </nav>
+    <div class="buy-mode" id="buyMode">
+      <span>한 번에</span>
+      <button type="button" data-n="1" class="on">1개</button>
+      <button type="button" data-n="10">10개</button>
+      <button type="button" data-n="max">최대</button>
+    </div>
+    <div class="list" id="list"></div>
+    <footer class="credit">© 2026 하늘섬 키우기 · 운영 버들(Budle) · <a href="mailto:budle2982@gmail.com">budle2982@gmail.com</a> · <a href="guide.html">게임 방법</a> · <a href="privacy.html">개인정보처리방침</a></footer>
+  </aside>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="m-box">
+    <h2 id="mTitle"></h2>
+    <p id="mText"></p>
+    <div class="m-btns" id="mBtns"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="audio.js"></script>
+<script src="art.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

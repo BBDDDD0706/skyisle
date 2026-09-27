@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://bbdddd0706.github.io/skyisle/sitemap.xml
